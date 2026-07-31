@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
+import PaymentHistory from "../components/PaymentHistory";
 
 const statusColors = {
   active: "bg-green-100 text-green-700",
@@ -89,19 +90,7 @@ export default function PolicyDetails() {
         <p className="text-gray-500 mb-6">No claims yet.</p>
       )}
 
-      <h2 className="text-lg font-semibold mb-2">Payment History</h2>
-      {policy.payments?.length ? (
-        <ul className="bg-white rounded shadow divide-y">
-          {policy.payments.map((p) => (
-            <li key={p.id} className="p-3 flex justify-between">
-              <span>₹{p.amount}</span>
-              <span className="text-sm text-gray-500">{p.paymentStatus}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500">No payments recorded yet.</p>
-      )}
+      <PaymentHistory policyId={policy.id} />
     </div>
   );
 }
