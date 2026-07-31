@@ -6,6 +6,7 @@ const customerRoutes = require("./routes/customers");
 const policyRoutes = require("./routes/policies");
 const paymentRoutes = require("./routes/payments");
 const claimRoutes = require("./routes/claims");
+const documentRoutes = require("./routes/documents");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/policies", policyRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", claimRoutes);
+app.use("/api", documentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

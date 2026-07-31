@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import CustomerList from "./pages/CustomerList";
+import CustomerProfile from "./pages/CustomerProfile";
 import PolicyList from "./pages/PolicyList";
 import PolicyForm from "./pages/PolicyForm";
 import PolicyDetails from "./pages/PolicyDetails";
@@ -15,6 +17,23 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent"]}>
+                <CustomerList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customers/:id"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent"]}>
+                <CustomerProfile />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/policies"
@@ -66,7 +85,7 @@ function App() {
             }
           />
 
-          <Route path="/" element={<Navigate to="/policies" replace />} />
+          <Route path="/" element={<Navigate to="/customers" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
