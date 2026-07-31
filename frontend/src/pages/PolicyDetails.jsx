@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api from "../api/axios";
 import PaymentHistory from "../components/PaymentHistory";
 
@@ -9,13 +9,21 @@ const statusColors = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+const claimStatusColors = {
+  pending: "bg-yellow-100 text-yellow-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+};
+
 export default function PolicyDetails() {
   const { id } = useParams();
   const [policy, setPolicy] = useState(null);
+  const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPolicy();
+    fetchClaims();
   }, [id]);
 
   const fetchPolicy = async () => {
@@ -27,6 +35,15 @@ export default function PolicyDetails() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClaims = async () => {
+    try {
+      const res = await api.get(`/policies/${id}/claims`);
+      setClaims(res.data.claims);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -76,13 +93,24 @@ export default function PolicyDetails() {
         </button>
       )}
 
-      <h2 className="text-lg font-semibold mb-2">Claims</h2>
-      {policy.claims?.length ? (
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-semibold">Claims</h2>
+        {policy.status === "active" && (
+          <Link to={`/policies/${id}/claims/new`} className="text-blue-600 hover:underline text-sm">
+            + File a Claim
+          </Link>
+        )}
+      </div>
+      {claims.length ? (
         <ul className="bg-white rounded shadow divide-y mb-6">
-          {policy.claims.map((c) => (
-            <li key={c.id} className="p-3 flex justify-between">
-              <span>{c.reason}</span>
-              <span className="text-sm text-gray-500">{c.status}</span>
+          {claims.map((c) => (
+            <li key={c.id} className="p-3 flex justify-between items-center">
+              <Link to={`/claims/${c.id}`} className="text-blue-600 hover:underline">
+                {c.reason}
+              </Link>
+              <span className={`px-2 py-1 rounded text-xs font-medium ${claimStatusColors[c.status]}`}>
+                {c.status}
+              </span>
             </li>
           ))}
         </ul>

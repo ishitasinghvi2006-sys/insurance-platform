@@ -5,6 +5,9 @@ import Login from "./pages/Login";
 import PolicyList from "./pages/PolicyList";
 import PolicyForm from "./pages/PolicyForm";
 import PolicyDetails from "./pages/PolicyDetails";
+import ClaimForm from "./pages/ClaimForm";
+import ClaimReviewList from "./pages/ClaimReviewList";
+import ClaimStatus from "./pages/ClaimStatus";
 
 function App() {
   return (
@@ -12,6 +15,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+
           <Route
             path="/policies"
             element={
@@ -36,6 +40,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/policies/:policyId/claims/new"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent", "customer"]}>
+                <ClaimForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/claims"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent"]}>
+                <ClaimReviewList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/claims/:id"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent", "customer"]}>
+                <ClaimStatus />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/" element={<Navigate to="/policies" replace />} />
         </Routes>
       </BrowserRouter>
