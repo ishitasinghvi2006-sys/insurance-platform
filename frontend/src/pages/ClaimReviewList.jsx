@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import Pagination from "../components/Pagination";
 
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -11,18 +12,21 @@ const statusColors = {
 export default function ClaimReviewList() {
   const [claims, setClaims] = useState([]);
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ pages: 1 });
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState(null);
 
   useEffect(() => {
     fetchClaims();
-  }, [status]);
+  }, [status, page]);
 
   const fetchClaims = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/claims", { params: { status } });
+      const res = await api.get("/claims", { params: { status, page, limit: 10 } });
       setClaims(res.data.claims);
+      setPagination(res.data.pagination);
     } catch (err) {
       console.error(err);
     } finally {
@@ -48,7 +52,7 @@ export default function ClaimReviewList() {
 
       <select
         value={status}
-        onChange={(e) => setStatus(e.target.value)}
+        onChange={(e) => { setStatus(e.target.value); setPage(1); }}
         className="border rounded px-3 py-2 mb-4"
       >
         <option value="">All Status</option>
@@ -104,6 +108,8 @@ export default function ClaimReviewList() {
           ))}
         </ul>
       )}
+
+      <Pagination page={page} pages={pagination.pages} onPageChange={setPage} />
     </div>
   );
 }

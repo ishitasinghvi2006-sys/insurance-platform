@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import SearchBar from "../components/SearchBar";
+import Pagination from "../components/Pagination";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ pages: 1 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCustomers();
-  }, [search]);
+  }, [search, page]);
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/customers", { params: { search, limit: 20 } });
+      const res = await api.get("/customers", { params: { search, page, limit: 10 } });
       setCustomers(res.data.customers);
+      setPagination(res.data.pagination);
     } catch (err) {
       console.error(err);
     } finally {
@@ -27,13 +32,13 @@ export default function CustomerList() {
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Customers</h1>
 
-      <input
-        type="text"
-        placeholder="Search by name or email..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border rounded px-3 py-2 mb-4 w-full"
-      />
+      <div className="mb-4">
+        <SearchBar
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(1); }}
+          placeholder="Search by name or email..."
+        />
+      </div>
 
       {loading ? (
         <p className="text-gray-500">Loading...</p>
@@ -54,6 +59,8 @@ export default function CustomerList() {
           ))}
         </ul>
       )}
+
+      <Pagination page={page} pages={pagination.pages} onPageChange={setPage} />
     </div>
   );
 }
