@@ -96,13 +96,17 @@ router.get("/:id", requireRole(["admin", "agent", "customer"]), async (req, res)
       return res.status(404).json({ success: false, message: "Policy not found" });
     }
 
+    // Customers can only view their own policy
+    if (req.user.role === "customer" && policy.customer.email !== req.user.email) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
     res.json({ success: true, policy });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 // UPDATE / RENEW policy
 router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
   try {
