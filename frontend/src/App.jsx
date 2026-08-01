@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
 import CustomerProfile from "./pages/CustomerProfile";
 import PolicyList from "./pages/PolicyList";
@@ -17,6 +18,15 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/customers"
@@ -85,7 +95,7 @@ function App() {
             }
           />
 
-          <Route path="/" element={<Navigate to="/customers" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
