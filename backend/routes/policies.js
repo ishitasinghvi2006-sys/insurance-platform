@@ -2,6 +2,8 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const authMiddleware = require("../middleware/auth");
 const requireRole = require("../middleware/role");
+const validate = require("../middleware/validate");
+const { createPolicySchema, updatePolicySchema } = require("../validators/policyValidator");
 
 const router = express.Router();
 
@@ -15,29 +17,25 @@ function generatePolicyNumber() {
 }
 
 // CREATE policy (admin or agent only)
-router.post("/", requireRole(["admin", "agent"]), async (req, res) => {
+router.post("/", requireRole(["admin", "agent"]), validate(createPolicySchema), async (req, res, next) => {
   try {
     const { customerId, policyType, premiumAmount, startDate, termMonths } = req.body;
 
-    if (!customerId || !policyType || !premiumAmount || !startDate || !termMonths) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
-    }
-
-    const customer = await prisma.customer.findUnique({ where: { id: Number(customerId) } });
+    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
     const start = new Date(startDate);
     const end = new Date(start);
-    end.setMonth(end.getMonth() + Number(termMonths));
+    end.setMonth(end.getMonth() + termMonths);
 
     const policy = await prisma.policy.create({
       data: {
-        customerId: Number(customerId),
+        customerId,
         policyType,
         policyNumber: generatePolicyNumber(),
-        premiumAmount: Number(premiumAmount),
+        premiumAmount,
         startDate: start,
         endDate: end,
         status: "active",
@@ -46,13 +44,12 @@ router.post("/", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.status(201).json({ success: true, policy });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // LIST policies (filter by status, search by policy number, pagination)
-router.get("/", requireRole(["admin", "agent"]), async (req, res) => {
+router.get("/", requireRole(["admin", "agent"]), async (req, res, next) => {
   try {
     const { status, search = "", page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -79,13 +76,12 @@ router.get("/", requireRole(["admin", "agent"]), async (req, res) => {
       pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // GET single policy (with claims + payments)
-router.get("/:id", requireRole(["admin", "agent", "customer"]), async (req, res) => {
+router.get("/:id", requireRole(["admin", "agent", "customer"]), async (req, res, next) => {
   try {
     const policy = await prisma.policy.findUnique({
       where: { id: Number(req.params.id) },
@@ -103,12 +99,12 @@ router.get("/:id", requireRole(["admin", "agent", "customer"]), async (req, res)
 
     res.json({ success: true, policy });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
+
 // UPDATE / RENEW policy
-router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
+router.put("/:id", requireRole(["admin", "agent"]), validate(updatePolicySchema), async (req, res, next) => {
   try {
     const { policyType, premiumAmount, endDate, status } = req.body;
 
@@ -116,7 +112,7 @@ router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
       where: { id: Number(req.params.id) },
       data: {
         ...(policyType && { policyType }),
-        ...(premiumAmount && { premiumAmount: Number(premiumAmount) }),
+        ...(premiumAmount && { premiumAmount }),
         ...(endDate && { endDate: new Date(endDate) }),
         ...(status && { status }),
       },
@@ -124,16 +120,15 @@ router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.json({ success: true, policy });
   } catch (err) {
-    console.error(err);
     if (err.code === "P2025") {
       return res.status(404).json({ success: false, message: "Policy not found" });
     }
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // CANCEL policy (status change, not deletion)
-router.put("/:id/cancel", requireRole(["admin", "agent"]), async (req, res) => {
+router.put("/:id/cancel", requireRole(["admin", "agent"]), async (req, res, next) => {
   try {
     const policy = await prisma.policy.update({
       where: { id: Number(req.params.id) },
@@ -142,11 +137,10 @@ router.put("/:id/cancel", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.json({ success: true, message: "Policy cancelled", policy });
   } catch (err) {
-    console.error(err);
     if (err.code === "P2025") {
       return res.status(404).json({ success: false, message: "Policy not found" });
     }
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 

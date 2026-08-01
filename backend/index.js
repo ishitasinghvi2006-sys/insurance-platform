@@ -8,6 +8,7 @@ const paymentRoutes = require("./routes/payments");
 const claimRoutes = require("./routes/claims");
 const documentRoutes = require("./routes/documents");
 const reportRoutes = require("./routes/reports");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -25,6 +26,8 @@ app.use("/api", paymentRoutes);
 app.use("/api", claimRoutes);
 app.use("/api", documentRoutes);
 app.use("/api", reportRoutes);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

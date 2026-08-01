@@ -2,6 +2,8 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const authMiddleware = require("../middleware/auth");
 const requireRole = require("../middleware/role");
+const validate = require("../middleware/validate");
+const { createCustomerSchema, updateCustomerSchema } = require("../validators/customerValidator");
 
 const router = express.Router();
 
@@ -9,13 +11,9 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // CREATE customer (admin or agent only)
-router.post("/", requireRole(["admin", "agent"]), async (req, res) => {
+router.post("/", requireRole(["admin", "agent"]), validate(createCustomerSchema), async (req, res, next) => {
   try {
     const { name, dob, phone, address, email } = req.body;
-
-    if (!name || !dob || !phone || !address || !email) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
-    }
 
     const existing = await prisma.customer.findUnique({ where: { email } });
     if (existing) {
@@ -28,13 +26,12 @@ router.post("/", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.status(201).json({ success: true, customer });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // LIST customers (with search + pagination)
-router.get("/", requireRole(["admin", "agent"]), async (req, res) => {
+router.get("/", requireRole(["admin", "agent"]), async (req, res, next) => {
   try {
     const { search = "", page = 1, limit = 10 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -59,13 +56,12 @@ router.get("/", requireRole(["admin", "agent"]), async (req, res) => {
       pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // GET single customer profile (with policies + documents)
-router.get("/:id", requireRole(["admin", "agent"]), async (req, res) => {
+router.get("/:id", requireRole(["admin", "agent"]), async (req, res, next) => {
   try {
     const customer = await prisma.customer.findUnique({
       where: { id: Number(req.params.id) },
@@ -78,13 +74,12 @@ router.get("/:id", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.json({ success: true, customer });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // UPDATE customer
-router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
+router.put("/:id", requireRole(["admin", "agent"]), validate(updateCustomerSchema), async (req, res, next) => {
   try {
     const { name, dob, phone, address, email } = req.body;
 
@@ -101,25 +96,23 @@ router.put("/:id", requireRole(["admin", "agent"]), async (req, res) => {
 
     res.json({ success: true, customer });
   } catch (err) {
-    console.error(err);
     if (err.code === "P2025") {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
 // DELETE customer
-router.delete("/:id", requireRole(["admin"]), async (req, res) => {
+router.delete("/:id", requireRole(["admin"]), async (req, res, next) => {
   try {
     await prisma.customer.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true, message: "Customer deleted" });
   } catch (err) {
-    console.error(err);
     if (err.code === "P2025") {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
-    res.status(500).json({ success: false, message: "Server error" });
+    next(err);
   }
 });
 
