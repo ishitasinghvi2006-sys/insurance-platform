@@ -13,7 +13,7 @@ import PolicyDetails from "./pages/PolicyDetails";
 import ClaimForm from "./pages/ClaimForm";
 import ClaimReviewList from "./pages/ClaimReviewList";
 import ClaimStatus from "./pages/ClaimStatus";
-
+import CustomerForm from "./pages/CustomerForm";
 function App() {
   return (
     <AuthProvider>
@@ -37,6 +37,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["admin", "agent"]}>
                 <CustomerList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customers/new"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "agent"]}>
+                <CustomerForm />
               </ProtectedRoute>
             }
           />
